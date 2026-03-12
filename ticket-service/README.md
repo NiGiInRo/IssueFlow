@@ -1,61 +1,36 @@
 ﻿# Ticket Service
 
-## Proposito
+Microservicio central de IssueFlow. Aqui vive el dominio principal del sistema: tickets, estados, reglas de transicion y coordinacion inicial con asignacion y auditoria.
 
-`ticket-service` es el primer microservicio a desarrollar y el nucleo del dominio de IssueFlow.
-Aqui vive la logica principal del sistema: tickets, estados, reglas de transicion y coordinacion del flujo con otros servicios.
+## Estado actual
 
-## Por que va primero
+Proyecto base generado con Spring Initializr.
 
-- define el dominio principal
-- fija las reglas del flujo del ticket
-- establece contratos que luego consumen otros microservicios
-- es el mejor punto para aplicar arquitectura hexagonal desde el inicio
+- `Spring Boot 3.5.11`
+- `Java 21`
+- Maven
+- dependencias actuales: `Spring Web`, `Spring Data JPA`, `Validation`, `Actuator`, `H2`, `PostgreSQL Driver`
 
-## Responsabilidades iniciales
+## Objetivo del MVP
+
+En esta primera iteracion el servicio debe:
 
 - crear tickets
 - listar tickets
 - consultar ticket por id
 - asignar ticket a un agente
-- cambiar estado del ticket
-- coordinar registro de eventos de auditoria
+- cambiar estado
+- exponer `GET /health`
+- dejar stubs para auditoria y asignacion
 
-## Stack minimo
+## Reglas minimas del dominio
 
-- Java
-- Spring Boot
-- Spring Web
-- Spring Data JPA
-- base de datos relacional simple
-- cliente HTTP para comunicacion con otros servicios
+- un ticket inicia en `OPEN`
+- no puede pasar de `OPEN` a `CLOSED` directamente
+- solo puede cerrarse si esta en `RESOLVED`
+- solo puede asignarse si existe `assigneeId`
 
-## Enfoque arquitectonico
-
-Este servicio debe implementar arquitectura hexagonal.
-La idea es proteger el dominio del framework, de la base de datos y de clientes HTTP externos.
-
-### Capas esperadas
-
-- `domain`: entidades, enums y reglas del negocio
-- `application`: casos de uso
-- `port.in`: contratos de entrada
-- `port.out`: contratos de salida
-- `infrastructure`: controladores, persistencia y clientes externos
-
-## Dominio minimo esperado
-
-### Entidad principal
-
-- `Ticket`
-
-### Enums iniciales
-
-- `TicketStatus`
-- `TicketPriority`
-- `TicketCategory`
-
-### Estados recomendados
+## Estados iniciales
 
 - `OPEN`
 - `ASSIGNED`
@@ -63,67 +38,15 @@ La idea es proteger el dominio del framework, de la base de datos y de clientes 
 - `RESOLVED`
 - `CLOSED`
 
-### Reglas basicas
+## Estructura arquitectonica buscada
 
-- un ticket inicia en `OPEN`
-- no debe pasar de `OPEN` a `CLOSED` directamente
-- solo puede cerrarse si esta en `RESOLVED`
-- solo puede asignarse si existe `assigneeId`
+- `domain`
+- `application`
+- `port.in`
+- `port.out`
+- `infrastructure`
 
-## Casos de uso MVP
-
-- `CreateTicket`
-- `GetTicketById`
-- `ListTickets`
-- `UpdateTicketStatus`
-- `AssignTicketToAgent`
-
-## Integraciones esperadas
-
-### Assignment Service
-
-Se usa para resolver la asignacion del ticket a un agente.
-
-### Notification Audit Service
-
-Se usa para registrar eventos relevantes del flujo del ticket.
-
-## Estructura base sugerida
-
-```text
-ticket-service/
-  src/main/java/com/issueflow/ticket/
-    domain/
-      model/
-        Ticket.java
-        TicketStatus.java
-        TicketPriority.java
-        TicketCategory.java
-      port/
-        in/
-          CreateTicketUseCase.java
-          GetTicketUseCase.java
-          ListTicketsUseCase.java
-          UpdateTicketStatusUseCase.java
-          AssignTicketUseCase.java
-        out/
-          TicketRepository.java
-          AssignmentClient.java
-          AuditClient.java
-    application/
-      service/
-        CreateTicketService.java
-        GetTicketService.java
-        ListTicketsService.java
-        UpdateTicketStatusService.java
-        AssignTicketService.java
-    infrastructure/
-      persistence/
-      web/
-      client/
-```
-
-## Endpoints minimos esperados
+## Endpoints MVP
 
 - `GET /health`
 - `POST /tickets`
@@ -132,11 +55,19 @@ ticket-service/
 - `POST /tickets/{id}/assign`
 - `PATCH /tickets/{id}/status`
 
-## Objetivo de esta primera iteracion
+## Documentacion especifica
 
-Tener un servicio local funcional que permita:
+- [docs/README.md](C:/Users/Nicolas/Documents/projects/flow-tickets-admin/ticket-service/docs/README.md)
+- [docs/01-roadmap.md](C:/Users/Nicolas/Documents/projects/flow-tickets-admin/ticket-service/docs/01-roadmap.md)
+- [docs/02-api-contract.md](C:/Users/Nicolas/Documents/projects/flow-tickets-admin/ticket-service/docs/02-api-contract.md)
+- [docs/03-project-structure.md](C:/Users/Nicolas/Documents/projects/flow-tickets-admin/ticket-service/docs/03-project-structure.md)
 
-- persistir tickets
-- validar transiciones de estado
-- exponer endpoints base
-- preparar los contratos para integrarse luego con `assignment-service` y `notification-audit-service`
+## Orden recomendado de trabajo
+
+1. cerrar contrato API inicial
+2. crear estructura hexagonal base
+3. modelar `Ticket` y reglas del dominio
+4. implementar persistencia desacoplada
+5. implementar casos de uso MVP
+6. exponer controladores HTTP y manejo de errores
+7. dejar stubs para `AssignmentClient` y `AuditClient`

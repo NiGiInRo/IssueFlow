@@ -19,6 +19,7 @@ Indice de documentacion general de IssueFlow.
 - [02-architecture.md](02-architecture.md)
 - [03-domain.md](03-domain.md)
 - [04-roadmap.md](04-roadmap.md)
+- [05-project-roadmap.md](05-project-roadmap.md)
 
 ## Deployments
 
