@@ -1,15 +1,16 @@
-@startuml
-!define RECTANGLE class
+﻿@startuml
+!theme plain
+left to right direction
 
-package "Cliente" {
-  actor Usuario
-}
+title IssueFlow - Diagrama de Componentes
+
+actor Usuario
 
 package "IssueFlow Platform" {
   [Gateway Service\nNode.js] as Gateway
   [Ticket Service\nSpring Boot] as Ticket
   [Assignment Service\nFastAPI] as Assignment
-  [Notification Audit Service\nRails/Sinatra] as Audit
+  [Notification Audit Service\nRuby API] as Audit
 
   database "Ticket DB" as TicketDB
   database "Assignment DB" as AssignmentDB

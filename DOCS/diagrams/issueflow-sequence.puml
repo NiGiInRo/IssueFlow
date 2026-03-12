@@ -1,0 +1,98 @@
+﻿@startuml
+!theme plain
+
+title IssueFlow - Flujo principal entre microservicios
+
+actor Solicitante
+participant "Gateway Service\n(Node.js)" as Gateway
+participant "Ticket Service\n(Spring Boot)" as Ticket
+participant "Assignment Service\n(FastAPI)" as Assignment
+participant "Notification Audit Service\n(Ruby API)" as Audit
+database "Ticket DB" as TicketDB
+database "Assignment DB" as AssignmentDB
+database "Audit DB" as AuditDB
+
+== Crear ticket ==
+Solicitante -> Gateway : POST /tickets
+Gateway -> Ticket : POST /tickets
+Ticket -> Ticket : validar datos
+Ticket -> TicketDB : guardar ticket OPEN
+TicketDB --> Ticket : ticket persistido
+Ticket -> Audit : POST /audit-events\nTICKET_CREATED
+Audit -> AuditDB : guardar evento
+AuditDB --> Audit : ok
+Audit --> Ticket : ok
+Ticket --> Gateway : 201 Created
+Gateway --> Solicitante : ticket creado
+
+== Asignar ticket ==
+Solicitante -> Gateway : POST /tickets/{id}/assign
+Gateway -> Ticket : POST /tickets/{id}/assign
+Ticket -> Assignment : POST /assignments
+Assignment -> Assignment : seleccionar o validar agente
+Assignment -> AssignmentDB : guardar asignacion ACTIVE
+AssignmentDB --> Assignment : asignacion persistida
+Assignment --> Ticket : assigneeId
+Ticket -> TicketDB : actualizar ticket a ASSIGNED
+TicketDB --> Ticket : ok
+Ticket -> Audit : POST /audit-events\nTICKET_ASSIGNED
+Audit -> AuditDB : guardar evento
+AuditDB --> Audit : ok
+Audit --> Ticket : ok
+Ticket --> Gateway : 200 OK
+Gateway --> Solicitante : asignacion confirmada
+
+== Iniciar atencion ==
+Solicitante -> Gateway : PATCH /tickets/{id}/status IN_PROGRESS
+Gateway -> Ticket : PATCH /tickets/{id}/status
+Ticket -> Ticket : validar transicion
+Ticket -> TicketDB : actualizar estado IN_PROGRESS
+TicketDB --> Ticket : ok
+Ticket -> Audit : POST /audit-events\nSTATUS_CHANGED
+Audit -> AuditDB : guardar evento
+AuditDB --> Audit : ok
+Audit --> Ticket : ok
+Ticket --> Gateway : 200 OK
+Gateway --> Solicitante : estado actualizado
+
+== Resolver ticket ==
+Solicitante -> Gateway : PATCH /tickets/{id}/status RESOLVED
+Gateway -> Ticket : PATCH /tickets/{id}/status
+Ticket -> Ticket : validar transicion
+Ticket -> TicketDB : actualizar estado RESOLVED
+TicketDB --> Ticket : ok
+Ticket -> Audit : POST /audit-events\nTICKET_RESOLVED
+Audit -> AuditDB : guardar evento
+AuditDB --> Audit : ok
+Audit --> Ticket : ok
+Ticket --> Gateway : 200 OK
+Gateway --> Solicitante : ticket resuelto
+
+== Cerrar ticket ==
+Solicitante -> Gateway : PATCH /tickets/{id}/status CLOSED
+Gateway -> Ticket : PATCH /tickets/{id}/status
+Ticket -> Ticket : validar transicion desde RESOLVED
+Ticket -> TicketDB : actualizar estado CLOSED
+TicketDB --> Ticket : ok
+Ticket -> Audit : POST /audit-events\nTICKET_CLOSED
+Audit -> AuditDB : guardar evento
+AuditDB --> Audit : ok
+Audit --> Ticket : ok
+Ticket --> Gateway : 200 OK
+Gateway --> Solicitante : ticket cerrado
+
+== Consultar historial ==
+Solicitante -> Gateway : GET /tickets/{id}
+Gateway -> Ticket : GET /tickets/{id}
+Ticket -> TicketDB : consultar ticket
+TicketDB --> Ticket : ticket
+Ticket --> Gateway : detalle del ticket
+Gateway --> Solicitante : detalle actualizado
+
+Solicitante -> Gateway : GET /tickets/{id}/audit
+Gateway -> Audit : GET /audit-events?ticketId={id}
+Audit -> AuditDB : consultar eventos
+AuditDB --> Audit : lista de eventos
+Audit --> Gateway : historial de auditoria
+Gateway --> Solicitante : historial del ticket
+@enduml
